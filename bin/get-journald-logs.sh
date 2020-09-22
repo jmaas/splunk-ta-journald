@@ -4,6 +4,7 @@
 # Requires the 'jq' package to be installed.
 #
 
+PATH=/bin:/usr/bin:/sbin:/usr/sbin
 CUR_DIR=$(dirname $0)
 STATE_DIR="${CUR_DIR}/../state"
 STATE_FILE="${STATE_DIR}/journald.state"
@@ -22,14 +23,14 @@ update_state () {
 if [ -s ${STATE_FILE} ]; then
 	# get state and logs
 	CURSOR=$(cat ${STATE_FILE})
-	/usr/bin/journalctl --after-cursor="${CURSOR}" --no-tail --no-pager -o json | /usr/bin/tee ${STATE_LOGFILE}
+	journalctl --after-cursor="${CURSOR}" --no-tail --no-pager -o json | tee ${STATE_LOGFILE}
 	update_state
 fi
 
 
 if ! [ -f ${STATE_FILE} ]; then
 	# no state (first run?); get logs of today
-	/usr/bin/journalctl --no-tail --since today --no-pager -o json | /usr/bin/tee ${STATE_LOGFILE}
+	journalctl --no-tail --since today --no-pager -o json | tee ${STATE_LOGFILE}
 	update_state
 fi
 
