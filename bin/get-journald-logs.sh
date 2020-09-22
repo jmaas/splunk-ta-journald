@@ -4,35 +4,33 @@
 # Requires the 'jq' package to be installed.
 #
 
-#LOG_DATE=$(date +"%Y-%m-%d")
-#LOG_NAME="journald-${LOG_DATE}.log"
-#LOG_DIR="/var/log/splunk-journald"
-#LOG_FILE="${LOG_DIR}/${LOG_NAME}"
+CUR_DIR=$(dirname $0)
+STATE_DIR="${CUR_DIR}/../state"
+STATE_FILE="${STATE_DIR}/journald.state"
+STATE_LOGFILE="${STATE_DIR}/journald.log"
 
-STATE_NAME="journald.state"
-STATE_DIR="state"
-STATE_FILE="${STATE_DIR}/${STATE_NAME}"
 
-#if ! [ -d ${LOG_DIR} ]; then
-#	mkdir -p ${LOG_DIR}
-#fi
+update_state () {
+	if [ -s ${STATE_LOGFILE} ]; then
+		# only update state if we have a new one
+		STATE=$(tail -n1 ${STATE_LOGFILE} | jq -j '.__CURSOR')
+		echo -n ${STATE} > ${STATE_FILE}
+	fi
+}
 
-#if ! [ -d ${STATE_DIR} ]; then
-#	mkdir -p ${STATE_DIR}
-#fi
 
-if [ -f ${STATE_FILE} ]; then
+if [ -s ${STATE_FILE} ]; then
 	# get state and logs
 	CURSOR=$(cat ${STATE_FILE})
-     	/usr/bin/journalctl --after-cursor="${CURSOR}" --no-tail --no-pager -o json # >> ${LOG_FILE}
-else
-	# no state; get all logs as of today
-	/usr/bin/journalctl --no-tail --since today --no-pager -o json # >> ${LOG_FILE}
+	/usr/bin/journalctl --after-cursor="${CURSOR}" --no-tail --no-pager -o json | /usr/bin/tee ${STATE_LOGFILE}
+	update_state
 fi
 
-# update state
-STATE=$(tail -n1 ${LOG_FILE} | jq -r '.__CURSOR')
-echo ${STATE} > ${STATE_FILE}
+
+if ! [ -f ${STATE_FILE} ]; then
+	# no state (first run?); get logs of today
+	/usr/bin/journalctl --no-tail --since today --no-pager -o json | /usr/bin/tee ${STATE_LOGFILE}
+	update_state
+fi
 
 # EOF
-

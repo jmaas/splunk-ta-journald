@@ -1,1 +1,1 @@
-# splunk-ta-journald
+# Splunk-TA-journald

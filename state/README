@@ -1,1 +1,2 @@
-This directory holds the state file.
+This directory holds the journald state as well as the last log file.
+If you ever need to reset this input just delete the journald.* files.
